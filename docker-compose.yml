@@ -1,0 +1,21 @@
+services:
+  pdf-page-extract:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: pimbay/asset-dedup-pdf-page-extract:local
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      SOCKET_PATH: /sockets/pdf-page-extract.sock
+      SHARED_VOLUME_DIR: /shared
+      TTL_SWEEP_INTERVAL_MS: 300000
+      TTL_RETENTION_MS: 3600000
+    volumes:
+      - sockets:/sockets
+      - shared-assets:/shared
+    restart: unless-stopped
+
+volumes:
+  sockets:
+  shared-assets:
