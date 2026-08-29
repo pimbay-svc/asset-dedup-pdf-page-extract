@@ -69,7 +69,6 @@ npm run test:integration   # real DI container wiring, a real UDS socket pair
 npm run test:all           # both
 npm run test:coverage      # both, with a coverage report (target: 100%, enforced)
 npm run test:mutation      # StrykerJS mutation testing (target: 100% MSI, enforced) — no Python needed
-
 ```
 
 ## Development Helpers
