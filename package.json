@@ -2,7 +2,7 @@
   "name": "@pimbay/asset-dedup-pdf-page-extract",
   "private": true,
   "version": "1.0.0",
-  "description": "PDF extension for asset-dedup-core — extracts pages from PDFs over a Unix domain socket. Hashing is out of scope; core sends extracted page paths to image-hash separately.",
+  "description": "PDF extension for asset-dedup-core — extracts pages from PDFs over a Unix domain socket.",
   "license": "Unlicense",
   "author": {
     "name": "Jan Sarmir",
