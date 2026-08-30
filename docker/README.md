@@ -25,6 +25,8 @@ services:
   pdf-page-extract:
     image: pimbay/asset-dedup-pdf-page-extract:latest
     environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
       SOCKET_PATH: /sockets/pdf-page-extract.sock
       SHARED_VOLUME_DIR: /shared
     volumes:
@@ -41,18 +43,22 @@ volumes:
 
 ## Environment Variables
 
-| Variable                | Required | Default                                 | Description                                                                     |
-| ----------------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------- |
-| `SOCKET_PATH`           | Yes      | —                                       | Path of the Unix domain socket this service listens on.                         |
-| `SHARED_VOLUME_DIR`     | Yes      | —                                       | Base directory shared with `asset-dedup-core`: source PDFs read, pages written. |
-| `OUTPUT_DIR`            | No       | `${SHARED_VOLUME_DIR}/pdf-page-extract` | Where extracted pages are written.                                              |
-| `PDF_RENDER_TIMEOUT_MS` | No       | `15000`                                 | Hard timeout for a single `pdftoppm`/`pdfinfo` invocation.                      |
-| `TTL_SWEEP_INTERVAL_MS` | No       | `300000`                                | How often the background sweep of `OUTPUT_DIR` runs.                            |
-| `TTL_RETENTION_MS`      | No       | `3600000`                               | Age past which the TTL sweep deletes a leftover output file.                    |
-| `NODE_ENV`              | No       | `production`                            | `development` \| `production` \| `test`.                                        |
-| `LOG_LEVEL`             | No       | `info`                                  | pino level: `trace`\|`debug`\|`info`\|`warn`\|`error`\|`fatal`\|`silent`.       |
+Env-only — there is no config file. Everything is validated at startup; a broken or missing required value fails immediately, before the socket server starts listening, rather than accepting connections with silently wrong behavior. All numeric variables accept both string and number form (`"15000"` or `15000`) and must be positive integers.
 
-Full reference, including `PDFTOPPM_BIN`/`PDFINFO_BIN`: see the main repo's `docs/configuration.md`.
+| Variable                | Required | Default                                 | Description                                                                                                                                                                                                 |
+| ----------------------- | -------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SOCKET_PATH`           | Yes      | —                                       | Filesystem path of the Unix domain socket this service listens on. Must be on a location `core` can also reach — a volume shared with `asset-dedup-core`.                                                   |
+| `SHARED_VOLUME_DIR`     | Yes      | —                                       | Base directory shared with `core`: source PDF paths sent over the socket are expected to resolve under here, and `OUTPUT_DIR` defaults to a subdirectory of it.                                             |
+| `OUTPUT_DIR`            | No       | `${SHARED_VOLUME_DIR}/pdf-page-extract` | Directory extracted PNG pages are written into. Created automatically on first use if it doesn't exist.                                                                                                     |
+| `PDFTOPPM_BIN`          | No       | `pdftoppm`                              | Path to the `pdftoppm` binary (poppler-utils), or a bare name resolved via `PATH`.                                                                                                                          |
+| `PDFINFO_BIN`           | No       | `pdfinfo`                               | Path to the `pdfinfo` binary (poppler-utils), or a bare name resolved via `PATH`.                                                                                                                           |
+| `PDF_RENDER_TIMEOUT_MS` | No       | `15000`                                 | Hard timeout for a single `pdftoppm`/`pdfinfo` invocation (page-count probe or one page render). Exceeding it kills the child process and fails that call.                                                  |
+| `TTL_SWEEP_INTERVAL_MS` | No       | `300000` (5 min)                        | How often the background sweep of `OUTPUT_DIR` runs.                                                                                                                                                        |
+| `TTL_RETENTION_MS`      | No       | `3600000` (1 h)                         | Age past which the TTL sweep deletes a leftover output file. Defensive backstop only — `core` is expected to consume/delete its own output; this catches what's left behind if `core` crashes mid-pipeline. |
+| `NODE_ENV`              | No       | `production`                            | `development` \| `production` \| `test`. Controls log pretty-printing.                                                                                                                                      |
+| `LOG_LEVEL`             | No       | `info`                                  | pino level: `trace`\|`debug`\|`info`\|`warn`\|`error`\|`fatal`\|`silent`.                                                                                                                                   |
+
+**Not configurable via env:** page selection and DPI are per-request, sent by `core` in the request's `config` field (see Protocol below) — there is no server-side default or override for either. Output filename convention (`{uniqueId}-{index}.png`) is fixed, not configurable.
 
 ## Volumes
 
@@ -68,6 +74,8 @@ Both volumes must be shared with (mounted into) `asset-dedup-core` for the two s
 | Port / Path                      | Protocol    | Description                                                                               |
 | -------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
 | `/sockets/pdf-page-extract.sock` | Unix socket | Length-prefixed JSON protocol; only interface this service exposes. No HTTP, no TCP port. |
+
+No HTTP port is exposed.
 
 ## Tags
 
