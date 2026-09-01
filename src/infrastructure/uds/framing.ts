@@ -8,10 +8,8 @@
  */
 
 /**
- * Shared wire framing for the Unix domain socket protocol: every message (both directions) is
- * `[4 bytes: length, big-endian uint32][N bytes: UTF-8 JSON payload]` — no boundary beyond this
- * length prefix, so partial reads must be buffered until a full frame is available.
- * Pure logic, no `net`/socket dependency, so it's unit-testable by feeding raw chunks directly.
+ * Wire framing for the UDS protocol: `[4 bytes length, BE uint32][N bytes UTF-8 JSON]`.
+ * Partial reads are buffered until a full frame is available. Pure logic, no `net` dependency.
  */
 
 const LENGTH_PREFIX_BYTES = 4;
@@ -19,13 +17,10 @@ const LENGTH_PREFIX_BYTES = 4;
 export class FrameDecoder {
   private buffer: Buffer = Buffer.alloc(0);
 
-  /**
-   * Feeds newly received bytes in and returns any fully-decoded messages found so far
-   * (zero, one, or more — a single chunk can contain multiple frames, or only part of one).
-   */
+  /** Feeds in new bytes; returns any fully-decoded messages found so far (zero, one, or more). */
   push(chunk: Buffer): unknown[] {
     // Stryker disable next-line ConditionalExpression: equivalent mutant — Buffer.concat([Buffer.alloc(0), chunk])
-    // is byte-identical to `chunk`; this ternary is purely an allocation-avoidance optimization, not correctness.
+    // is byte-identical to `chunk`; the ternary only avoids an allocation.
     this.buffer = this.buffer.length === 0 ? chunk : Buffer.concat([this.buffer, chunk]);
 
     const messages: unknown[] = [];

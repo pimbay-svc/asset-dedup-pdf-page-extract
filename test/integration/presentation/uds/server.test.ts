@@ -68,10 +68,8 @@ describe('UDS server', () => {
   });
 
   it('removes a stale socket file left by an unclean shutdown and listens successfully', async () => {
-    // A plain file at the path (not a live listener) is exactly what a Unix domain socket file
-    // looks like after the process that owned it was SIGKILLed rather than shutting down
-    // cleanly — connecting to it fails, so it must be treated as stale and removed, not left to
-    // make this listen() fail with a false EADDRINUSE.
+    // A plain file at the path is what a socket file looks like after an unclean (SIGKILLed) shutdown: connecting
+    // fails, so it must be treated as stale and removed, not left to make listen() fail with a false EADDRINUSE.
     const stalePath = path.join(dir, 'stale.sock');
     await writeFile(stalePath, '');
 
@@ -86,10 +84,8 @@ describe('UDS server', () => {
   });
 
   it('rejects if the stale-socket cleanup itself fails for a non-ENOENT reason', async () => {
-    // A directory at the socket path isn't a live listener either (connecting to it still
-    // fails, so it's treated as "stale" and unlink is attempted) — but unlink() on a directory
-    // fails with EISDIR, not ENOENT, and that must propagate rather than being silently
-    // swallowed the way a genuinely-missing file (ENOENT) is.
+    // A directory at the socket path is also treated as stale (connecting fails), but unlink() on it fails with EISDIR,
+    // not ENOENT — that must propagate, not be swallowed the way a genuinely-missing file is.
     const dirAtSocketPath = path.join(dir, 'blocking-dir.sock');
     await mkdir(dirAtSocketPath);
 
@@ -103,15 +99,14 @@ describe('UDS server', () => {
   });
 
   it('removes its own startup error listener once listening succeeds', () => {
-    // If server.ts's removeListener('error', reject) call didn't fire (or fired for the wrong
-    // event name), this stray listener from startup would remain attached indefinitely.
+    // A stray startup 'error' listener would stay attached forever if removeListener() didn't
+    // fire (or fired for the wrong event name).
     expect(handle.server.listenerCount('error')).toBe(0);
   });
 
   it('rejects if the socket path is already bound by another listener', async () => {
-    // A second server on the exact same UDS path triggers a real EADDRINUSE 'error' event
-    // during listen() — proving server.once('error', reject) is wired to the real event name,
-    // not a mutated one that would never fire and leave this hanging forever.
+    // A second server on the same UDS path triggers a real EADDRINUSE error during listen(),
+    // proving server.once('error', reject) is wired to the real event name and won't hang forever.
     const secondCradle = {
       env: { SOCKET_PATH: socketPath },
       logger: fakeLogger(),
