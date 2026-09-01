@@ -9,8 +9,8 @@ Communication is a single persistent Unix-domain-socket connection from `core` (
 
 ```bash
 docker run --rm \
-  -v pdf-sockets:/sockets \
-  -v pdf-shared-assets:/shared \
+  -v sockets:/sockets \
+  -v shared-assets:/shared \
   -e SOCKET_PATH=/sockets/pdf-page-extract.sock \
   -e SHARED_VOLUME_DIR=/shared \
   pimbay/asset-dedup-pdf-page-extract:latest
