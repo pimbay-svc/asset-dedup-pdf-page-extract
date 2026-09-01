@@ -51,6 +51,6 @@ jobs:
 
       - name: Sync main and tags to GitHub
         run: |
-          git remote add github "https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/pimbay-svc/asset-dedup-image-hash.git"
+          git remote add github "https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/pimbay-svc/asset-dedup-pdf-page-extract.git"
           git push github main
           git push github --tags
