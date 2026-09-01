@@ -24,11 +24,9 @@ interface CommandResult {
 const RENDERED_PAGE_EXTENSION = '.png';
 
 /**
- * Reads directly from a shared-volume path (never a base64 buffer over the socket) and writes
- * each selected page straight to a file on that same volume. `pdftoppm` has no arbitrary-page-list
- * mode, so each page is rendered via its own invocation into a short-lived temp dir, then copied
- * (not renamed — temp dir and OUTPUT_DIR may be on different filesystems) under the shared
- * naming convention.
+ * Reads/writes directly on the shared volume (never base64 over the socket). `pdftoppm` has no
+ * arbitrary-page-list mode, so each page renders via its own invocation into a temp dir, then is
+ * copied — not renamed, since the temp dir and OUTPUT_DIR may be on different filesystems.
  */
 export class PdfProvider implements PdfExtractor {
   constructor(private readonly env: Env) {}
@@ -58,9 +56,7 @@ export class PdfProvider implements PdfExtractor {
       throw CorruptInputError.pageCountUndetermined(stderr);
     }
 
-    /* v8 ignore next -- the regex has exactly one capturing group that always participates when
-       the overall match succeeds, so match[1] is never actually undefined; the `?? ''` exists
-       only to satisfy noUncheckedIndexedAccess. */
+    /* v8 ignore next -- match[1] always participates when the regex matches; `?? ''` only satisfies noUncheckedIndexedAccess. */
     const totalPages = Number.parseInt(match[1] ?? '', 10);
 
     if (totalPages <= 0) {
@@ -117,9 +113,7 @@ export class PdfProvider implements PdfExtractor {
       let settled = false;
 
       const timer = setTimeout(() => {
-        /* v8 ignore next 3 -- a setTimeout callback only ever fires once; `settled` cannot
-           already be true the first (and only) time this runs, so this guard exists only for
-           defensive symmetry with the 'error'/'close' handlers below. */
+        /* v8 ignore next 3 -- fires only once, so `settled` is never already true here; kept for symmetry with 'error'/'close'. */
         if (settled) {
           return;
         }
@@ -132,9 +126,7 @@ export class PdfProvider implements PdfExtractor {
       child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
 
       child.on('error', (err) => {
-        /* v8 ignore next 3 -- reachable only if 'error' fires after the timeout already settled
-           this promise, which would require a hung process to still emit a spawn-level error
-           afterwards; not something a well-behaved or even misbehaving pdfinfo/pdftoppm does. */
+        /* v8 ignore next 3 -- would require 'error' to fire after the timeout already settled; not something pdfinfo/pdftoppm does. */
         if (settled) {
           return;
         }

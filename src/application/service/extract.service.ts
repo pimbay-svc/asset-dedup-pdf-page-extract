@@ -40,9 +40,8 @@ export class PdfExtractService {
   ) {}
 
   /**
-   * Extracts pages for every item in `inputs`. A failure on one item never prevents the rest of the batch from
-   * being attempted and reported — each item is handled independently and its result (success or error) is
-   * reported under its own key, mirroring `inputs` exactly.
+   * Extracts pages for every item in `inputs` independently — one item's failure never blocks the
+   * rest — reporting each result (success or error) under its own key, mirroring `inputs` exactly.
    */
   async extractBatch(
     config: ExtractPagesConfig,
