@@ -26,10 +26,8 @@ export function selectPageNumbers(strategy: PageSelection, totalPages: number): 
   const candidates = [1, middle, totalPages];
 
   // Stryker disable next-line MethodExpression,ConditionalExpression,LogicalOperator,ArithmeticOperator:
-  // candidates is always [1, middle, totalPages] with 1 <= middle <= totalPages for any totalPages >= 1 —
-  // the only value this is ever called with, since pdfProvider.ts rejects a non-positive page count
-  // (CorruptInputError.nonPositivePageCount) before selectPageNumbers ever runs. .filter() therefore
-  // never removes a candidate and the array is already ascending; both exist as a defensive contract for
-  // this exported function's documented behavior, not to serve any input it's actually called with today.
+  // candidates is always [1, middle, totalPages] with 1 <= middle <= totalPages (pdfProvider.ts rejects
+  // non-positive page counts first), so .filter()/.sort() are a no-op today — kept only to honor this
+  // exported function's documented contract for any input.
   return [...new Set(candidates)].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
 }

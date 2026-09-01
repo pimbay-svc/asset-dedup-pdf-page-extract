@@ -53,8 +53,7 @@ export async function handleExtract(message: unknown, cradle: Cradle): Promise<E
   const configError = findConfigError(config);
 
   if (configError !== undefined) {
-    // Malformed at the request level, not per-item — report every input as internal_error rather
-    // than silently defaulting to a strategy/value core didn't ask for.
+    // Malformed at the request level (not per-item) — report every input as internal_error rather than defaulting.
     const errorEntry = { error: { code: 'internal_error', message: configError } };
 
     return { outputs: Object.fromEntries(Object.keys(inputs).map((id) => [id, errorEntry])) };

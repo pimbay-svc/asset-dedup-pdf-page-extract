@@ -12,10 +12,9 @@ import type pino from 'pino';
 import type { Env } from '../env/env.js';
 
 /**
- * Runs a recurring sweep of `env.OUTPUT_DIR`, deleting anything older than `env.TTL_RETENTION_MS`
- * — a defensive backstop against leaked disk space if `core` crashes before consuming/deleting our
- * output (`core` owns cleanup normally). `start()` returns a stop function; the interval is
- * `unref()`'d so it never keeps the process alive on its own.
+ * Backstop sweep of `env.OUTPUT_DIR`, deleting files older than `env.TTL_RETENTION_MS` in case
+ * `core` (which normally owns cleanup) crashes first. `start()` returns a stop function; the
+ * interval is `unref()`'d so it never keeps the process alive alone.
  */
 export class TtlSweeper {
   constructor(

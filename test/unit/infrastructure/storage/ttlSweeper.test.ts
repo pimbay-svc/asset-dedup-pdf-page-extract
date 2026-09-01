@@ -124,10 +124,8 @@ describe('TtlSweeper', () => {
     const boundaryFile = path.join(outputDir, 'boundary.png');
     await writeFile(boundaryFile, 'x');
 
-    // Pin Date.now() to a fixed value for the whole sweep, independent of real wall-clock
-    // jitter (real setInterval/fs I/O still runs normally — only "now" is controlled), so the
-    // file's age as seen by sweepOnce is *exactly* retentionMs, the precise boundary between
-    // "kept" (>) and "removed" (>=).
+    // Pin Date.now() to a fixed value for the whole sweep (real setInterval/fs I/O still runs, only "now" is
+    // controlled), so the file's age is *exactly* retentionMs — precise boundary between "kept" (>) and "removed" (>=).
     const fixedNow = Date.now() + 10_000;
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
     const mtime = new Date(fixedNow - retentionMs);
