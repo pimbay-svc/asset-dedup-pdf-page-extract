@@ -15,7 +15,7 @@
     "url": "https://codeberg.org/pimbay-svc/asset-dedup-pdf-page-extract"
   },
   "bugs": {
-    "url": "https://codeberg.org/pimbay-svc/asset-dedup-pdf-page-extract/issues"
+    "url": "https://github.com/pimbay-svc/asset-dedup-pdf-page-extract/issues"
   },
   "type": "module",
   "engines": {
