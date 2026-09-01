@@ -1,7 +1,7 @@
 {
   "name": "@pimbay/asset-dedup-pdf-page-extract",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PDF extension for asset-dedup-core — extracts pages from PDFs over a Unix domain socket.",
   "license": "Unlicense",
   "author": {
