@@ -21,11 +21,10 @@ sudo apt-get install poppler-utils
 ```
 
 ```bash
+git clone https://codeberg.org/pimbay-svc/asset-dedup-pdf-page-extract.git
+cd asset-dedup-pdf-page-extract
 npm install
 cp .env.example .env
-# edit .env — SOCKET_PATH and SHARED_VOLUME_DIR must point at paths this process can actually read/write
-# (a volume shared with asset-dedup-core in production, any local directory for standalone dev)
-
 npm run dev
 ```
 
@@ -37,6 +36,47 @@ docker compose up --build
 
 Builds the image (Node runtime + `poppler-utils` in the same container, see `docker/Dockerfile`) and mounts two named volumes shared with `asset-dedup-core`: one for the socket file, one for source PDFs/extracted pages.
 No TCP port is published — the only interface this service has is the socket file on the shared volume.
+
+```bash
+docker pull pimbay/asset-dedup-pdf-page-extract:latest       # Docker Hub
+docker pull ghcr.io/pimbay-svc/asset-dedup-pdf-page-extract:latest  # GitHub Container Registry
+```
+
+## Usage
+
+The smallest useful thing this service does: extract the default pages (`first-middle-last`, 150 DPI) from one PDF already sitting on the shared volume.
+`scripts/dev/extract.sh` sends an `extract` op directly to a running instance — no full `core` client setup needed.
+
+```bash
+scripts/dev/extract.sh --pdf /shared/asset-def456.pdf --page-selection all --dpi 150 --socket-path /sockets/pdf-page-extract.sock
+```
+
+```text
+extract op -> /sockets/pdf-page-extract.sock  (path: /shared/asset-def456.pdf, page_selection: all, dpi: 150)
+{
+  "outputs": {
+    "id1": {
+      "paths": [
+        "/shared/asset-def456/page-1.png",
+        "/shared/asset-def456/page-12.png",
+        "/shared/asset-def456/page-24.png"
+      ]
+    }
+  }
+}
+```
+
+`--page-selection` (`first-middle-last`/`all`), `--dpi`, and `--socket-path` are all optional:
+
+```bash
+scripts/dev/extract.sh --pdf /shared/asset-def456.pdf
+scripts/dev/extract.sh --pdf /shared/asset-def456.pdf --page-selection all
+scripts/dev/extract.sh --page-selection first-middle-last --dpi 150 --pdf /shared/asset-def456.pdf
+scripts/dev/extract.sh --socket-path /sockets/pdf-page-extract.sock --pdf /shared/asset-def456.pdf --page-selection all --dpi 150
+```
+
+The PDF path must already be readable by the running instance — a path on the shared volume, not your host machine; only the path is sent, never file bytes.
+Not HTTP, so there's no `curl` equivalent — full request/response shapes, error codes, and batch requests: **[docs/api.md](docs/api.md)**.
 
 ## Configuration
 
@@ -59,7 +99,7 @@ Not HTTP — a length-prefixed JSON protocol over a private Unix domain socket s
 | --------- | ---------------------------------------------------------------------------------------------------------- | ---------------------- |
 | `extract` | Renders selected pages per input PDF (`first-middle-last` or `all`), written as PNGs to the shared volume. | `{ "outputs": {...} }` |
 
-Full request/response shapes, error codes, and a usage example: **[docs/api.md](docs/api.md)**.
+Full request/response shapes and error codes: **[docs/api.md](docs/api.md)**.
 
 ## Testing
 
@@ -80,15 +120,6 @@ npm run js:format     # check
 npm run js:format:fix # fix
 npm run js:typecheck  # tsc --noEmit
 ```
-
-```bash
-scripts/dev/extract.sh --pdf /shared/asset-def456.pdf
-scripts/dev/extract.sh --pdf /shared/asset-def456.pdf --page-selection all
-scripts/dev/extract.sh --page-selection first-middle-last --dpi 150 --pdf /shared/asset-def456.pdf
-scripts/dev/extract.sh --socket-path /sockets/pdf-page-extract.sock --pdf /shared/asset-def456.pdf --page-selection all --dpi 150
-```
-
-Sends an `extract` op directly to a running instance over the socket — `PDF_PATH` must already be readable by this process (a path on the shared volume, not your host machine); only the path is sent, never file bytes.
 
 ## Architecture & Decisions
 
