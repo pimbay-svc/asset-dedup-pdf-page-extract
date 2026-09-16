@@ -12,7 +12,7 @@ describe('logger', () => {
     it('returns a file transport in test', () => {
       expect(resolveTransport(makeEnv({ NODE_ENV: NodeEnv.TEST }))).toEqual({
         target: 'pino/file',
-        options: { destination: 'var/test/test.log', mkdir: true },
+        options: { destination: 'var/logs/test.log', mkdir: true },
       });
     });
 
