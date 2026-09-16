@@ -91,6 +91,8 @@ export class PdfProvider implements PdfExtractor {
         throw CorruptInputError.pageRenderFailed(pageNumber, stderr);
       }
 
+      // copyFile, not rename — workDir (OS tmp) and outputPath (mounted shared volume) can be on
+      // different filesystems, and rename() across devices fails with EXDEV.
       await copyFile(rendered, outputPath);
     } finally {
       await rm(workDir, { recursive: true, force: true });
