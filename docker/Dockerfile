@@ -20,6 +20,11 @@ RUN npm run js:build
 FROM node:24-slim
 WORKDIR /app
 
+# ARGs re-declared here — Dockerfile ARG scope ends at the stage that follows a FROM,
+# so a value passed at build time only reaches instructions in this stage if repeated.
+ARG VERSION=0.0.0-dev
+ARG REVISION=unknown
+
 # poppler-utils provides both `pdftoppm` and `pdfinfo`.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends poppler-utils gosu \
@@ -29,9 +34,15 @@ RUN apt-get update \
 COPY --from=deps --chown=appuser:appuser /app/node_modules ./node_modules
 COPY --from=build --chown=appuser:appuser /app/dist ./dist
 COPY --chown=appuser:appuser package.json ./
+COPY --chown=appuser:appuser VERSION ./
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+LABEL org.opencontainers.image.title="asset-dedup-pdf-page-extract" \
+      org.opencontainers.image.version=$VERSION \
+      org.opencontainers.image.revision=$REVISION \
+      org.opencontainers.image.source="https://codeberg.org/pimbay-svc/asset-dedup-pdf-page-extract"
 
 ENV NODE_ENV=production
 ENV PDFTOPPM_BIN=pdftoppm
